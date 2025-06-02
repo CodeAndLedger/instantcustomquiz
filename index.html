@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Excel-Based MCQ Quiz</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f9f9f9; }
+    .question-box { margin: 20px 0; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px #ddd; }
+    .option { margin: 5px 0; }
+    button { margin-top: 10px; padding: 10px 15px; border: none; border-radius: 5px; background-color: #007bff; color: white; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+    #result { font-weight: bold; font-size: 1.2em; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <h2>Upload Excel File for MCQ Quiz</h2>
+  <input type="file" id="excelFile" accept=".xlsx" />
+  <div id="quizContainer"></div>
+  <div id="result"></div>
+
+  <script>
+    let questions = [];
+
+    document.getElementById('excelFile').addEventListener('change', function(e) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+        questions = jsonData;
+        showQuiz();
+      };
+      reader.readAsArrayBuffer(e.target.files[0]);
+    });
+
+    function showQuiz() {
+      const container = document.getElementById('quizContainer');
+      container.innerHTML = ''; // Clear previous content
+
+      questions.forEach((q, index) => {
+        const box = document.createElement('div');
+        box.className = 'question-box';
+        box.innerHTML = `
+          <div><strong>Q${index + 1}:</strong> ${q['Question']}</div>
+          <div class="option"><input type="radio" name="q${index}" value="A"> A. ${q['Option A']}</div>
+          <div class="option"><input type="radio" name="q${index}" value="B"> B. ${q['Option B']}</div>
+          <div class="option"><input type="radio" name="q${index}" value="C"> C. ${q['Option C']}</div>
+          <div class="option"><input type="radio" name="q${index}" value="D"> D. ${q['Option D']}</div>
+        `;
+        container.appendChild(box);
+      });
+
+      const submitBtn = document.createElement('button');
+      submitBtn.textContent = 'Submit Quiz';
+      submitBtn.onclick = gradeQuiz;
+      container.appendChild(submitBtn);
+    }
+
+    function gradeQuiz() {
+      let score = 0;
+      questions.forEach((q, index) => {
+        const selected = document.querySelector(`input[name="q${index}"]:checked`);
+        if (selected && selected.value === q['Correct Answer']) {
+          score++;
+        }
+      });
+
+      document.getElementById('result').textContent = `Your Score: ${score} / ${questions.length}`;
+    }
+  </script>
+
+</body>
+</html>
